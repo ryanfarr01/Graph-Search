@@ -260,7 +260,24 @@ def dfs(init_state, f, is_goal, actions):
         traversed until the final goal state
     action_path - the actions taken to transition from the initial state to goal state
     '''
-    # Fill me in!
+    frontier = [] #This is the search stack
+    n0 = SearchNode(init_state, actions)
+    visited = []
+    frontier.push(n0)
+    while len(frontier) > 0:
+        #Grab the last element
+        n_i = frontier.pop()
+        if n_i not in visited:
+            visited.add(n_i.state)
+            if is_goal(n_i.state): #return if we found the goal
+                return(backpath(n_i), visited)
+            else: #otherwise, add each search node for each action to the stack and continue
+                for a in actions:
+                    s_prime = f(n_i.state, a)
+                    n_prime = SearchNode(s_prime, actions, n_i, a)
+                    frontier.push(n_prime)
+
+    #If we got here, the goal was never reached
     return None
 
 def bfs(init_state, f, is_goal, actions):
@@ -308,5 +325,16 @@ def backpath(node):
     '''
     path = []
     action_path = []
-    # Fill me in!
+    cur_node = node
+    
+    #Go over each node and itself and the action that its parent took to get there
+    while cur_node.parent != None:
+        path.insert(0, cur_node)
+        action_path.insert(0, cur_node.parent_action)
+        cur_node = cur_node.parent
+
+    #add in the start node, which should be the cur_node
+    path.insert(0, cur_node)
+    action_path.insert(0, cur_node.parent_action)
+
     return (path, action_path)
