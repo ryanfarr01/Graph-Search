@@ -294,7 +294,23 @@ def bfs(init_state, f, is_goal, actions):
         traversed until the final goal state
     action_path - the actions taken to transition from the initial state to goal state
     '''
-    # Fill me in!
+    frontier = Queue()
+    n0 = SearchNode(init_state, actions)
+    visited = []
+    frontier.put(n0)
+    while len(frontier) > 0:
+        n_i = frontier.get()
+        if n_i not in visited:
+            visited.add(n_i.state)
+            if is_goal(n_i.state):
+                return(backpath(n_i), visited)
+            else:
+                for a in actions:
+                    s_prime = f(n_i.state, a)
+                    n_prime = SearchNode(s_prime, actions, n_i, a)
+                    frontier.push(n_prime)
+    
+    #If we get here, the goal was never reached
     return None
 
 def uniform_cost_search(init_state, f, is_goal, actions):
