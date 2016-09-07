@@ -2,6 +2,7 @@
 '''
 Package providing helper classes and functions for performing graph search operations for planning.
 '''
+import sys
 import numpy as np
 import heapq
 import matplotlib.pyplot as plotter
@@ -10,7 +11,9 @@ from math import hypot
 _DEBUG = False
 _DEBUG_END = True
 _ACTIONS = ['u','d','l','r']
+_ACTION_COST = {'u': 1, 'd': 1, 'l': 1, 'r': 1}
 _ACTIONS_2 = ['u','d','l','r','ne','nw','sw','se']
+_ACTION_COST_2 = {'u': 1, 'd': 1, 'l': 1, 'r': 1, 'ne': 1.5, 'nw': 1.5, 'sw': 1.5, 'se': 1.5}
 _X = 1
 _Y = 0
 _GOAL_COLOR = 0.75
@@ -313,11 +316,25 @@ def bfs(init_state, f, is_goal, actions):
     #If we get here, the goal was never reached
     return None
 
-def uniform_cost_search(init_state, f, is_goal, actions):
-    # Fill me in!
+def uniform_cost_search(init_state, f, is_goal, actions, action_cost):
+    frontier = PriorityQ()
+    n0 = SearchNode(init_state, actions)
+    visited = []
+    frontier.push(n0, 0)
+    while len(frontier) > 0:
+        n_i = frontier.pop()
+        if n_i not in visited:
+            visited.add(n_i.state)
+            if is_goal(n_i.state):
+                return(path(n_i), visited)
+            else:
+                for a in actions:
+                    s_prime = f(n_i.state, a)
+                    n_prime = SearchNode(s_prime, actions, n_i, a, n_i.cost + action_cost[a])
+                    frontier.push(n_prime, n_prime.cost)
     return None
 
-def a_star_search(init_state, f, is_goal, actions, h):
+def a_star_search(init_state, f, is_goal, actions, action_cost, h):
     '''
     init_state - value of the initial state
     f - transition function takes input state (s), action (a), returns s_prime = f(s, a)
@@ -354,3 +371,10 @@ def backpath(node):
     action_path.insert(0, cur_node.parent_action)
 
     return (path, action_path)
+
+def main(argv):
+    
+    pass
+
+if __name__ == "__main__":
+    main(sys.argv)
