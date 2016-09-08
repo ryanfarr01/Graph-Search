@@ -8,7 +8,6 @@ import heapq
 import matplotlib.pyplot as plotter
 import math
 from sets  import Set
-from queue import Queue
 
 _DEBUG         = False
 _DEBUG_END     = True
@@ -107,6 +106,22 @@ class GridMap:
         elif a == 'r':
             if s[_X] < self.cols - 1:
                 new_pos[_X] += 1
+        elif a == 'ne':
+            if s[_X] < self.cols - 1 and s[_Y] > 0:
+                new_pos[_X] += 1
+                new_pos[_Y] -= 1
+        elif a == 'nw':
+            if s[_X] > 0 and s[_Y] > 0:
+                new_pos[_X] -= 1
+                new_pos[_Y] -= 1
+        elif a == 'se':
+            if s[_X] < self.cols - 1 and s[_Y] < self.rows - 1:
+                new_pos[_X] += 1
+                new_pos[_Y] += 1
+        elif a == 'sw':
+            if s[_X] > 0 and s[_Y] < self.rows - 1:
+                new_pos[_X] -= 1
+                new_pos[_Y] += 1
         else:
             print 'Unknown action:', str(a)
 
@@ -274,24 +289,23 @@ def dfs(init_state, f, is_goal, actions):
         traversed until the final goal state
     action_path - the actions taken to transition from the initial state to goal state
     '''
-    frontier = [] #This is the search stack
+    frontier = [] #use as queue
     n0 = SearchNode(init_state, actions)
     visited = set()
     frontier.append(n0)
     while len(frontier) > 0:
-        #Grab the last element
         n_i = frontier.pop()
-        if n_i not in visited:
+        if n_i.state not in visited:
             visited.add(n_i.state)
-            if is_goal(n_i.state): #return if we found the goal
+            if is_goal(n_i.state):
                 return(backpath(n_i), visited)
-            else: #otherwise, add each search node for each action to the stack and continue
+            else:
                 for a in actions:
                     s_prime = f(n_i.state, a)
                     n_prime = SearchNode(s_prime, actions, n_i, a)
                     frontier.append(n_prime)
-
-    #If we got here, the goal was never reached
+    
+    #If we get here, the goal was never reached
     return None
 
 def bfs(init_state, f, is_goal, actions):
@@ -308,13 +322,13 @@ def bfs(init_state, f, is_goal, actions):
         traversed until the final goal state
     action_path - the actions taken to transition from the initial state to goal state
     '''
-    frontier = Queue()
+    frontier = [] #use as queue
     n0 = SearchNode(init_state, actions)
     visited = set()
-    frontier.put(n0)
+    frontier.append(n0)
     while len(frontier) > 0:
-        n_i = frontier.get()
-        if n_i not in visited:
+        n_i = frontier.pop(0)
+        if n_i.state not in visited:
             visited.add(n_i.state)
             if is_goal(n_i.state):
                 return(backpath(n_i), visited)
@@ -322,7 +336,7 @@ def bfs(init_state, f, is_goal, actions):
                 for a in actions:
                     s_prime = f(n_i.state, a)
                     n_prime = SearchNode(s_prime, actions, n_i, a)
-                    frontier.put(n_prime)
+                    frontier.append(n_prime)
     
     #If we get here, the goal was never reached
     return None
@@ -334,15 +348,16 @@ def uniform_cost_search(init_state, f, is_goal, actions, action_cost):
     frontier.push(n0, 0)
     while len(frontier) > 0:
         n_i = frontier.pop()
-        if n_i not in visited:
+        if n_i.state not in visited:
             visited.add(n_i.state)
             if is_goal(n_i.state):
-                return(path(n_i), visited)
+                return(backpath(n_i), visited)
             else:
                 for a in actions:
                     s_prime = f(n_i.state, a)
                     n_prime = SearchNode(s_prime, actions, n_i, a, n_i.cost + action_cost[a])
-                    frontier.push(n_prime, n_prime.cost)
+                    if (n_prime.state not in frontier) or (n_prime.cost < frontier.get_cost(n_prime)):
+                        frontier.push(n_prime, n_prime.cost)
     return None
 
 def a_star_search(init_state, f, is_goal, actions, action_cost, h):
@@ -361,15 +376,17 @@ def a_star_search(init_state, f, is_goal, actions, action_cost, h):
     frontier.push(n0, 0)
     while len(frontier) > 0:
         n_i = frontier.pop()
-        if n_i not in visited:
+        if n_i.state not in visited:
             visited.add(n_i.state)
             if is_goal(n_i.state):
-                return(path(n_i), visited)
+                return(backpath(n_i), visited)
             else:
                 for a in actions:
                     s_prime = f(n_i.state, a)
                     n_prime = SearchNode(s_prime, actions, n_i, a, n_i.cost + action_cost[a])
-                    frontier.push(n_prime, n_prime.cost + h(n_prime.state))
+                    tot_cost = n_prime.cost + h(n_prime.state)
+                    if (n_prime.state not in frontier) or (tot_cost < frontier.get_cost(n_prime)):
+                        frontier.push(n_prime, tot_cost)
     return None
 
 def backpath(node):
@@ -381,25 +398,105 @@ def backpath(node):
     returns - a tuple containing (path, action_path) which are lists respectively of the states
     visited from init to goal (inclusive) and the actions taken to make those transitions.
     '''
-    path = []
+    path        = []
     action_path = []
     cur_node = node
     
     #Go over each node and itself and the action that its parent took to get there
     while cur_node.parent != None:
-        path.insert(0, cur_node)
+        path.insert(0, cur_node.state)
         action_path.insert(0, cur_node.parent_action)
         cur_node = cur_node.parent
 
     #add in the start node, which should be the cur_node
-    path.insert(0, cur_node)
+    path.insert(0, cur_node.state)
     action_path.insert(0, cur_node.parent_action)
 
     return (path, action_path)
 
+def help():
+    print('Must pass three or four arguments arguments: [file path] [actions] [algorithm] [optional: heuristic]')
+    print('    *[file path] - The path to the file representing the map')
+    print('    *[actions] - Which action set to be used. Available action sets:')
+    print('        *actions_1 - up, down, left, right')
+    print('        *actions_2 - up, down, left, right, up-left, up-right, down-left, down-right')
+    print('    *[algorithm] - Which algorithm is to be used. This can be: dfs, bfs, uniform, or a_star')
+    print('        If a_star is used, pass a third argument for the heurisitc to be used. Available heuristics:')
+    print('            *uninformed - always returns 0')
+    print('            *euclidian - returns the euclidian distance between the given point and the goal')
+    print('            *manhattan - returns the manhattan distance between the given point and the goal')
+    print('            *chebyshev - returns the chebyshev distance between the given point and the goal')
+    print('')
+    print('Example:')
+    print('    python graph_search.py Tests/map1.txt actions_2 a_star euclidian')
+    print('')
+    print('Another example:')
+    print('    python graph_search.py Tests/map2.txt actions_1 dfs')
+
+def get_heuristic(map, h):
+    if h == 'uninformed':
+        return map.uninformed_heuristic
+    elif h == 'euclidian':
+        return map.euclidian_distance_heuristic
+    elif h == 'manhattan':
+        return map.manhattan_distance_heuristic
+    elif h == 'chebyshev':
+        return map.chebyshev_distance_heuristic
+
+    print('Could not interpret heuristic \'' + h + '\'. Accepted: uninformed, euclidian, manhattan, chebyshev.')
+    print('')
+    help()
+    return -1
+
 def main(argv):
-    for s in argv:
-        print(s)
+    if len(argv) != 4 and len(argv) != 5:
+        help()
+        return
+    
+    actions = []
+    actions_cost = {}
+    if argv[2] == 'actions_1':
+        actions = _ACTIONS
+        actions_cost = _ACTION_COST
+    elif argv[2] == 'actions_2':
+        actions = _ACTIONS_2
+        actions_cost = _ACTION_2_COST
+    else:
+        print('Action \'' + argv[2] + '\' could not be interpreted. Should be actions_1 or actions_2')
+        print('')
+        help()
+
+    print('Creating map...')
+    map = GridMap(argv[1])
+    path = ([],{})
+
+    if argv[3] == 'dfs':
+        print('Performing DFS...')
+        path = dfs(map.init_pos, map.transition, map.is_goal, actions)
+    elif argv[3] == 'bfs':
+        print('Performing BFS...')
+        path = bfs(map.init_pos, map.transition, map.is_goal, actions)
+    elif argv[3] == 'uniform':
+        print('Performing uniform cost search...')
+        path = uniform_cost_search(map.init_pos, map.transition, map.is_goal, actions, actions_cost)
+    elif argv[3] == 'a_star':
+        print('Performing A* pathfinding with heuristic: ' + argv[4])
+        heuristic = get_heuristic(map, argv[4])
+        if heuristic == -1:
+            return 
+        path = a_star_search(map.init_pos, map.transition, map.is_goal, actions, actions_cost, heuristic)
+    else:
+        print('Algorithm: \'' + argv[2] + '\' is not recognized')
+        print('')
+        help()
+        return    
+
+    print('Printing results...')
+    if path == None:
+        print('No path could be found. Exiting')
+        return
+    
+    map.display_map(path[0][0], path[1])
 
 if __name__ == "__main__":
     main(sys.argv)
