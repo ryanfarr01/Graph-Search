@@ -6,20 +6,22 @@ import sys
 import numpy as np
 import heapq
 import matplotlib.pyplot as plotter
-from math import hypot
+import math
+from sets  import Set
+from queue import Queue
 
-_DEBUG = False
-_DEBUG_END = True
-_ACTIONS = ['u','d','l','r']
-_ACTION_COST = {'u': 1, 'd': 1, 'l': 1, 'r': 1}
-_ACTIONS_2 = ['u','d','l','r','ne','nw','sw','se']
+_DEBUG         = False
+_DEBUG_END     = True
+_ACTIONS       = ['u','d','l','r']
+_ACTION_COST   = {'u': 1, 'd': 1, 'l': 1, 'r': 1}
+_ACTIONS_2     = ['u','d','l','r','ne','nw','sw','se']
 _ACTION_COST_2 = {'u': 1, 'd': 1, 'l': 1, 'r': 1, 'ne': 1.5, 'nw': 1.5, 'sw': 1.5, 'se': 1.5}
 _X = 1
 _Y = 0
-_GOAL_COLOR = 0.75
-_INIT_COLOR = 0.25
-_PATH_COLOR_RANGE = _GOAL_COLOR-_INIT_COLOR
+_GOAL_COLOR    = 0.75
+_INIT_COLOR    = 0.25
 _VISITED_COLOR = 0.9
+_PATH_COLOR_RANGE = _GOAL_COLOR - _INIT_COLOR
 
 
 class GridMap:
@@ -153,6 +155,15 @@ class GridMap:
         '''
         return 0.0
 
+    def euclidian_distance_heuristic(self, s):
+        return math.sqrt(math.pow(s[_X] - self.goal[_X], 2) + math.pow(s[_Y] - self.goal[_Y], 2))
+
+    def manhattan_distance_heuristic(self, s):
+        return abs(s[_X] - self.goal[_X]) + abs(s[_Y] - self.goal[_Y])
+
+    def chebyshev_distance_heuristic(self, s):
+        return min(abs(s[_X] - self.goal[_X]), abs(s[_Y] - self.goal[_Y]))
+
 
 class SearchNode:
     def __init__(self, s, A, parent=None, parent_action=None, cost=0):
@@ -265,8 +276,8 @@ def dfs(init_state, f, is_goal, actions):
     '''
     frontier = [] #This is the search stack
     n0 = SearchNode(init_state, actions)
-    visited = []
-    frontier.push(n0)
+    visited = set()
+    frontier.append(n0)
     while len(frontier) > 0:
         #Grab the last element
         n_i = frontier.pop()
@@ -278,7 +289,7 @@ def dfs(init_state, f, is_goal, actions):
                 for a in actions:
                     s_prime = f(n_i.state, a)
                     n_prime = SearchNode(s_prime, actions, n_i, a)
-                    frontier.push(n_prime)
+                    frontier.append(n_prime)
 
     #If we got here, the goal was never reached
     return None
@@ -299,7 +310,7 @@ def bfs(init_state, f, is_goal, actions):
     '''
     frontier = Queue()
     n0 = SearchNode(init_state, actions)
-    visited = []
+    visited = set()
     frontier.put(n0)
     while len(frontier) > 0:
         n_i = frontier.get()
@@ -311,7 +322,7 @@ def bfs(init_state, f, is_goal, actions):
                 for a in actions:
                     s_prime = f(n_i.state, a)
                     n_prime = SearchNode(s_prime, actions, n_i, a)
-                    frontier.push(n_prime)
+                    frontier.put(n_prime)
     
     #If we get here, the goal was never reached
     return None
@@ -319,7 +330,7 @@ def bfs(init_state, f, is_goal, actions):
 def uniform_cost_search(init_state, f, is_goal, actions, action_cost):
     frontier = PriorityQ()
     n0 = SearchNode(init_state, actions)
-    visited = []
+    visited = set()
     frontier.push(n0, 0)
     while len(frontier) > 0:
         n_i = frontier.pop()
@@ -373,8 +384,8 @@ def backpath(node):
     return (path, action_path)
 
 def main(argv):
-    
-    pass
+    for s in argv:
+        print(s)
 
 if __name__ == "__main__":
     main(sys.argv)
