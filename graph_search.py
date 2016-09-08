@@ -15,7 +15,7 @@ _DEBUG_END     = True
 _ACTIONS       = ['u','d','l','r']
 _ACTION_COST   = {'u': 1, 'd': 1, 'l': 1, 'r': 1}
 _ACTIONS_2     = ['u','d','l','r','ne','nw','sw','se']
-_ACTION_COST_2 = {'u': 1, 'd': 1, 'l': 1, 'r': 1, 'ne': 1.5, 'nw': 1.5, 'sw': 1.5, 'se': 1.5}
+_ACTION_2_COST = {'u': 1, 'd': 1, 'l': 1, 'r': 1, 'ne': 1.5, 'nw': 1.5, 'sw': 1.5, 'se': 1.5}
 _X = 1
 _Y = 0
 _GOAL_COLOR    = 0.75
@@ -355,7 +355,21 @@ def a_star_search(init_state, f, is_goal, actions, action_cost, h):
     h - heuristic function, takes input s and returns estimated cost to goal
         (note h will also need access to the map, so should be a member function of GridMap)
     '''
-    # Fill me in!
+    frontier = PriorityQ()
+    n0 = SearchNode(init_state, actions)
+    visited = set()
+    frontier.push(n0, 0)
+    while len(frontier) > 0:
+        n_i = frontier.pop()
+        if n_i not in visited:
+            visited.add(n_i.state)
+            if is_goal(n_i.state):
+                return(path(n_i), visited)
+            else:
+                for a in actions:
+                    s_prime = f(n_i.state, a)
+                    n_prime = SearchNode(s_prime, actions, n_i, a, n_i.cost + action_cost[a])
+                    frontier.push(n_prime, n_prime.cost + h(n_prime.state))
     return None
 
 def backpath(node):
