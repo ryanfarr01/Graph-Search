@@ -308,6 +308,38 @@ def dfs(init_state, f, is_goal, actions):
     #If we get here, the goal was never reached
     return None
 
+def iterative_deepening(init_state, f, is_goal, actions, max_depth):
+    visited = set()
+    for i in range(0, max_depth + 1):
+        result = iterative_deepening_search(init_state, f, is_goal, actions, i, visited)
+        if result != None:
+            return result
+
+    return None
+
+def iterative_deepening_search(init_state, f, is_goal, actions, max_depth, visited):
+    frontier = [] #The search stack
+    n0 = SearchNode(init_state, actions)
+    frontier.append((n0, 0))
+    while len(frontier) > 0:
+        n_i = frontier.pop()
+        node = n_i[0]
+        depth = n_i[1]
+        if (node.state, depth, max_depth) not in visited and depth <= max_depth:
+            visited.add((node.state, depth, max_depth))
+            if is_goal(node.state):
+                ret_visited = set()
+                for t in visited:
+                    ret_visited.add(t[0])
+                return(backpath(node), ret_visited)
+            else:
+                for a in actions:
+                    s_prime = f(node.state, a)
+                    n_prime = SearchNode(s_prime, actions, node, a)
+                    frontier.append((n_prime, depth + 1))
+
+    return None
+
 def bfs(init_state, f, is_goal, actions):
     '''
     Perform breadth first search on a grid map.
@@ -420,7 +452,7 @@ def help():
     print('    *[actions] - Which action set to be used. Available action sets:')
     print('        *actions_1 - up, down, left, right')
     print('        *actions_2 - up, down, left, right, up-left, up-right, down-left, down-right')
-    print('    *[algorithm] - Which algorithm is to be used. This can be: dfs, bfs, uniform, or a_star')
+    print('    *[algorithm] - Which algorithm is to be used. This can be: dfs, iterative_deepening, bfs, uniform, or a_star')
     print('        If a_star is used, pass a third argument for the heurisitc to be used. Available heuristics:')
     print('            *uninformed - always returns 0')
     print('            *euclidian - returns the euclidian distance between the given point and the goal')
@@ -473,6 +505,9 @@ def main(argv):
     if argv[3] == 'dfs':
         print('Performing DFS...')
         path = dfs(map.init_pos, map.transition, map.is_goal, actions)
+    elif argv[3] == 'iterative_deepening':
+        print('Performing iterative deepening...')
+        path = iterative_deepening(map.init_pos, map.transition, map.is_goal, actions, (map.rows + 1)*(map.cols + 1))
     elif argv[3] == 'bfs':
         print('Performing BFS...')
         path = bfs(map.init_pos, map.transition, map.is_goal, actions)
@@ -486,7 +521,7 @@ def main(argv):
             return 
         path = a_star_search(map.init_pos, map.transition, map.is_goal, actions, actions_cost, heuristic)
     else:
-        print('Algorithm: \'' + argv[2] + '\' is not recognized')
+        print('Algorithm: \'' + argv[3] + '\' is not recognized')
         print('')
         help()
         return    
