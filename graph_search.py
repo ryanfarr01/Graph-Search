@@ -1,6 +1,31 @@
 #!/usr/bin/env python
 '''
 Package providing helper classes and functions for performing graph search operations for planning.
+
+Author: Ryan Farr
+Date: 9/8/2016
+File: graph_search.py - file contains all data structures and functions necessary to run
+    depth-first search, iterative deepening, breadth-first search, uniform cost search,
+    and A* search. Can be used by directly passing arguments through the commandline or 
+    by using the run_algorithm function after importing graph_search into another python
+    file.
+
+Available action sets are:
+    'actions_1' - this allows for up, down, left, and right
+    'actions_2' - this allows for up, down, left, right, up left, up right, down left, and down right
+
+Available algorithms are:
+    'dfs'                 - Depth-First Search
+    'iterative_deepening' - Iterative Deepning Depth-First Search
+    'bfs'                 - Breadth-First Search
+    'uniform'             - Uniform Cost Search
+    'a_star'              - A* Search
+
+Available heuristics are:
+    'uninformed' - Always returns 0
+    'euclidian'  - Returns the Euclidian distance to the goal
+    'manhattan'  - Returns the Manhattan distance to the goal
+    'chebyshev'  - Returns the chebyshev distance to the goal
 '''
 import sys
 import numpy as np
@@ -309,6 +334,17 @@ def dfs(init_state, f, is_goal, actions):
     return None
 
 def iterative_deepening(init_state, f, is_goal, actions, max_depth):
+    '''
+    iterative_deepening driver function
+
+    init_state - the intial state on the map
+    f - transition function of the form s_prime = f(s,a)
+    is_goal - function taking as input a state s and returning True if its a goal state
+    actions - set of actions which can be taken by the agent
+    max_depth - the maximum allowed depth to search
+
+    returns - ((path, action_path), visited) or None if no path can be found
+    '''
     visited = set()
     for i in range(0, max_depth + 1):
         result = iterative_deepening_search(init_state, f, is_goal, actions, i, visited)
@@ -318,6 +354,19 @@ def iterative_deepening(init_state, f, is_goal, actions, max_depth):
     return None
 
 def iterative_deepening_search(init_state, f, is_goal, actions, max_depth, visited):
+    '''
+    Performs iterative deepening depth-first search
+
+    init_state - the intial state on the map
+    f - transition function of the form s_prime = f(s,a)
+    is_goal - function taking as input a state s and returning True if its a goal state
+    actions - set of actions which can be taken by the agent
+    max_depth - the maximum allowed depth to search before giving up
+    visited - the set of visited nodes, may not be empty
+
+    returns - ((path, action_path), visited) or None if no path can be found
+    '''
+
     frontier = [] #The search stack
     n0 = SearchNode(init_state, actions)
     frontier.append((n0, 0))
@@ -374,6 +423,13 @@ def bfs(init_state, f, is_goal, actions):
     return None
 
 def uniform_cost_search(init_state, f, is_goal, actions, action_cost):
+    '''
+    init_state - value of the initial state
+    f - transition function takes input state (s), action (a), returns s_prime = f(s, a)
+    is_goal - takes state as input returns true if it is a goal
+    actions - list of possible actions available
+    action_cost - mapping of actions to their cost
+    '''
     frontier = PriorityQ()
     n0 = SearchNode(init_state, actions)
     visited = set()
@@ -446,6 +502,40 @@ def backpath(node):
 
     return (path, action_path)
 
+def run_algorithm(path, action, algorithm, heuristic = 'uninformed'):
+    '''
+    Function to run a given algorithm using a specified action set. Automatically shows the results
+        Available action sets are:
+            'actions_1' - this allows for up, down, left, and right
+            'actions_2' - this allows for up, down, left, right, up left, up right, down left, and down right
+        
+        Available algorithms are:
+            'dfs'                 - Depth-First Search
+            'iterative_deepening' - Iterative Deepning Depth-First Search
+            'bfs'                 - Breadth-First Search
+            'uniform'             - Uniform Cost Search
+            'a_star'              - A* Search
+
+        Available heuristics are:
+            'uninformed' - Always returns 0
+            'euclidian'  - Returns the Euclidian distance to the goal
+            'manhattan'  - Returns the Manhattan distance to the goal
+            'chebyshev'  - Returns the chebyshev distance to the goal
+
+        Example for depth-first search on map 0:
+            run_algorithm('Tests/map0.txt', 'actions_1', 'dfs') 
+
+        Example for A* search on map 2 using Manhattan distance as the heuristic:
+            run_algorithm('tests/map2.txt', 'actions_2', 'a_star', 'manhattan')
+    '''
+    input = [None] * 5
+    input[0] = None
+    input[1] = path
+    input[2] = action
+    input[3] = algorithm
+    input[4] = heuristic
+    main(input)
+
 def help():
     print('Must pass three or four arguments arguments: [file path] [actions] [algorithm] [optional: heuristic]')
     print('    *[file path] - The path to the file representing the map')
@@ -461,9 +551,11 @@ def help():
     print('')
     print('Example:')
     print('    python graph_search.py Tests/map1.txt actions_2 a_star euclidian')
-    print('')
-    print('Another example:')
     print('    python graph_search.py Tests/map2.txt actions_1 dfs')
+    print('')
+    print('Example using API:')
+    print('    graph_search.run_algorithm(\'Tests/map1.txt\', \'actions_1\', \'bfs\')')
+    
 
 def get_heuristic(map, h):
     if h == 'uninformed':
